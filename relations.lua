@@ -1,66 +1,68 @@
 -- Pre-defined relations
 function male_iterator_factory(self)
 	assert(typeof(self) == "table", "invalid input for iterator factory function")
-	assert(self["gender"], "the table doesn't have the necessary field to filter on")
+	assert(typeof(self.properties) == "table", "invalid input for iterator factory function")
+	assert(self.properties["gender"], "the table doesn't have the necessary field to filter on")
 	local has_been_called = false
 	return function()
 		if has_been_called then return nil end
 		has_been_called = true
-		if self["gender"] == "male" then return self
+		if self.properties["gender"] == "male" then return self
 		else return nil end
 	end
 end
 
 function female_iterator_factory(self)
 	assert(typeof(self) == "table", "invalid input for iterator factory function")
-	assert(self["gender"], "the table doesn't have the necessary field to filter on")
+	assert(typeof(self.properties) == "table", "invalid input for iterator factory function")
+	assert(sef.properties["gender"], "the table doesn't have the necessary field to filter on")
 	local has_been_called = false
 	return function()
 		if has_been_called then return nil end
 		has_been_called = true
-		if self["gender"] == "female" then return self
+		if sef.properties["gender"] == "female" then return self
 		else return nil end
 	end
 end
 
 function spouse_iterator_factory(self)
 	assert(typeof(self) == "table", "invalid input for iterator factory function")
-	assert(self["spouse"], "the table doesn't have the necessary field to iterate on")
+	assert(typeof(self.properties) == "table", "invalid input for iterator factory function")
+	assert(sef.properties["spouse"], "the table doesn't have the necessary field to iterate on")
 	local has_been_called = false
 	return function()
 		if has_been_called then return nil end
 		has_been_called = true
-		return self["spouse"]
+		return sef.properties["spouse"]
 	end
 end
 
 function child_iterator_factory(self)
 	assert(typeof(self) == "table", "invalid input for iterator factory function")
-	assert(self["child"], "the table doesn't have the necessary field to iterate on")
+	assert(typeof(self.properties) == "table", "invalid input for iterator factory function")
+	assert(sef.properties["child"], "the table doesn't have the necessary field to iterate on")
 	local i = 0
 	return function()
-		if i > #self["child"] then return nil end
+		if i > #sef.properties["child"] then return nil end
 		i = i + 1
-		return self["child"][i]
+		return sef.properties["child"][i]
 	end
 end
 
 function parent_iterator_factory(self)
 	assert(typeof(self) == "table", "invalid input for iterator factory function")
-	assert(self["parent"], "the table doesn't have the necessary field to iterate on")
+	assert(typeof(self.properties) == "table", "invalid input for iterator factory function")
+	assert(sef.properties["parent"], "the table doesn't have the necessary field to iterate on")
 	local i = 0
 	return function()
-		if i > #self["parent"] then return nil end
+		if i > #sef.properties["parent"] then return nil end
 		i = i + 1
-		return self["parent"][i]
+		return sef.properties["parent"][i]
 	end
 end
 
--- A table to keep track of circular relation definitions
-local being_processed = {}
-
--- A table with all relation finction iterator factories
-local relation_functions = {
+-- A prototype for creating people
+local person = {
 	male = male_iterator_factory,
 	female = female_iterator_factory,
 	spouse = spouse_iterator_factory,
@@ -68,10 +70,26 @@ local relation_functions = {
 	parent = parent_iterator_factory
 }
 
-function register_relaions (relation_name, path)
+local cache_mt = {__mode = "v"}
+function person:new(properties)
+	assert(typeof(properties) == "table", "please provide a table with the person's properties to create a person")
+	local person = {}
+	person.properties = properties
+	person.cache = {}
+	setmetatable(person.cache, cache_mt)
+	self.__index = self
+	setmetatable(person, self)
+	return person
+end
+
+-- A table to keep track of circular relation definitions
+local being_processed = {}
+
+function register_relations (relation_name, path)
 	-- Validate inputs
-	assert(relation_name, "trying to register a relation without a name")
-	assert(typeof(path) == "table", "please provide a path to register a relation")
+	assert(typeof(relation_name) == "string", "trying to register a relation with an invalid")
+	assert(typeof(path) == "table", "please provide a path to register relation" .. relation_name)
+	assert(person[relation_name] == nil, "attempt to redefine" .. relation_name)
 	-- Create a non-local variable for the closures
 	local func = nil
 
@@ -123,7 +141,7 @@ function register_relaions (relation_name, path)
 	end
 	-- Finally, we enclose the resulting finciton with a filter to remove self-relations
 	-- As always, we return an iterator factory
-	relation_functions[relation_name] = function (self)
+	func = function (self)
 		-- We get the path iterator for the element we provide
 		local iterator = func(self)
 		-- We return an iterator that just returns the same elements the path iterator returns 
@@ -134,4 +152,25 @@ function register_relaions (relation_name, path)
 			return tmp
 		end
 	end
+	person[relation_name] = function(self)
+		if self.cache[relation_name] ~= nil then
+			local i = 0
+			return function() i = i + 1 return self.cache[relation][i] end
+		end
+		return func(self)
+	end
+end
+
+-- This function returns the table with the relatives of type relation
+-- for person named person_name. Requires a filled-out table person_by_name
+function get_relation_for_person(person_name, relation)
+	local person = person_by_name[person_name]
+	result = person.properties[relation] or person.cache[relation]
+	if result ~= nil then return result end
+	result = {}
+	for relative in person[relation](person) do
+		result[#result + 1] = relative
+	end
+	person.cache[relation] = result
+	return result
 end
