@@ -1,7 +1,7 @@
 -- Pre-defined relations
 function male_iterator_factory(self)
-	assert(typeof(self) == "table", "invalid input for iterator factory function")
-	assert(typeof(self.properties) == "table", "invalid input for iterator factory function")
+	assert(type(self) == "table", "invalid input for iterator factory function")
+	assert(type(self.properties) == "table", "invalid input for iterator factory function")
 	assert(self.properties["gender"], "the table doesn't have the necessary field to filter on")
 	local has_been_called = false
 	return function()
@@ -13,8 +13,8 @@ function male_iterator_factory(self)
 end
 
 function female_iterator_factory(self)
-	assert(typeof(self) == "table", "invalid input for iterator factory function")
-	assert(typeof(self.properties) == "table", "invalid input for iterator factory function")
+	assert(type(self) == "table", "invalid input for iterator factory function")
+	assert(type(self.properties) == "table", "invalid input for iterator factory function")
 	assert(sef.properties["gender"], "the table doesn't have the necessary field to filter on")
 	local has_been_called = false
 	return function()
@@ -26,8 +26,8 @@ function female_iterator_factory(self)
 end
 
 function spouse_iterator_factory(self)
-	assert(typeof(self) == "table", "invalid input for iterator factory function")
-	assert(typeof(self.properties) == "table", "invalid input for iterator factory function")
+	assert(type(self) == "table", "invalid input for iterator factory function")
+	assert(type(self.properties) == "table", "invalid input for iterator factory function")
 	assert(sef.properties["spouse"], "the table doesn't have the necessary field to iterate on")
 	local has_been_called = false
 	return function()
@@ -38,8 +38,8 @@ function spouse_iterator_factory(self)
 end
 
 function child_iterator_factory(self)
-	assert(typeof(self) == "table", "invalid input for iterator factory function")
-	assert(typeof(self.properties) == "table", "invalid input for iterator factory function")
+	assert(type(self) == "table", "invalid input for iterator factory function")
+	assert(type(self.properties) == "table", "invalid input for iterator factory function")
 	assert(sef.properties["child"], "the table doesn't have the necessary field to iterate on")
 	local i = 0
 	return function()
@@ -50,8 +50,8 @@ function child_iterator_factory(self)
 end
 
 function parent_iterator_factory(self)
-	assert(typeof(self) == "table", "invalid input for iterator factory function")
-	assert(typeof(self.properties) == "table", "invalid input for iterator factory function")
+	assert(type(self) == "table", "invalid input for iterator factory function")
+	assert(type(self.properties) == "table", "invalid input for iterator factory function")
 	assert(sef.properties["parent"], "the table doesn't have the necessary field to iterate on")
 	local i = 0
 	return function()
@@ -72,7 +72,7 @@ local person = {
 
 local cache_mt = {__mode = "v"}
 function person:new(properties)
-	assert((typeof(properties) == "table") or (typeof(properties) == "nil"), "please provide a valid argument to create a person")
+	assert((type(properties) == "table") or (type(properties) == "nil"), "please provide a valid argument to create a person")
 	local person = {}
 	person.properties = properties or {}
 	person.cache = {}
@@ -87,8 +87,8 @@ local being_processed = {}
 
 function register_relations (relation_name, path)
 	-- Validate inputs
-	assert(typeof(relation_name) == "string", "trying to register a relation with an invalid name")
-	assert(typeof(path) == "table", "please provide a path to register relation" .. relation_name)
+	assert(type(relation_name) == "string", "trying to register a relation with an invalid name")
+	assert(type(path) == "table", "please provide a path to register relation" .. relation_name)
 	assert(person[relation_name] == nil, "attempt to redefine" .. relation_name)
 	-- Create a non-local variable for the closures
 	local func = nil
@@ -181,7 +181,7 @@ end
 
 -- This function runs the user-provided file containing the calls to register_relations in a secure environment
 function process_relations(filename)
-	assert(typeof(filename) == "string", "please provide a sting argument as the filename")
+	assert(type(filename) == "string", "please provide a sting argument as the filename")
 	-- Restrict the environment user-provided code runs in
 	local accessible_functions = {register_relations}
 	local get_relations = assert(loadfile(filename, "t", accessible_functions))
