@@ -72,9 +72,9 @@ local person = {
 
 local cache_mt = {__mode = "v"}
 function person:new(properties)
-	assert(typeof(properties) == "table", "please provide a table with the person's properties to create a person")
+	assert((typeof(properties) == "table") or (typeof(properties) == "nil"), "please provide a valid argument to create a person")
 	local person = {}
-	person.properties = properties
+	person.properties = properties or {}
 	person.cache = {}
 	setmetatable(person.cache, cache_mt)
 	self.__index = self
@@ -87,7 +87,7 @@ local being_processed = {}
 
 function register_relations (relation_name, path)
 	-- Validate inputs
-	assert(typeof(relation_name) == "string", "trying to register a relation with an invalid")
+	assert(typeof(relation_name) == "string", "trying to register a relation with an invalid name")
 	assert(typeof(path) == "table", "please provide a path to register relation" .. relation_name)
 	assert(person[relation_name] == nil, "attempt to redefine" .. relation_name)
 	-- Create a non-local variable for the closures
@@ -102,13 +102,14 @@ function register_relations (relation_name, path)
 		-- The creation of an iterator factory for all other relations in the path
 		func = function(self)
 			-- A check for circular relation definition
-			if being_prosessed[relation] then error("Detected circular relation definition for " .. relation) end
+			if being_prosessed[relation] then error("detected circular relation definition for " .. relation) end
 			being_processed[relation] = true
 
 			-- The iterator needs to keep track of the current element we're getting
 			-- the rest of the path for. To get it, we first save the iterator for
 			-- the current level, and call it each time we need to process a new person
 			-- on the current level
+			assert(self[relation], "unknown relation " .. relation)
 			local current_iterator = self[relation](self)
 			being_processed[relation] = nil
 			local current = current_iterator()
@@ -165,12 +166,38 @@ end
 -- for person named person_name. Requires a filled-out table person_by_name
 function get_relation_for_person(person_name, relation)
 	local person = person_by_name[person_name]
-	result = person.properties[relation] or person.cache[relation]
+	assert(person, "person named " .. person_name .. " does not exist")
+	local result = person.properties[relation] or person.cache[relation]
 	if result ~= nil then return result end
 	result = {}
-	for relative in person[relation](person) do
+	local relative_iterator = person[relation]
+	assert(relative_iterator, "failed to find relation " .. relation)
+	for relative in relative_iterator(person) do
 		result[#result + 1] = relative
 	end
 	person.cache[relation] = result
 	return result
+end
+
+-- This function runs the user-provided file containing the calls to register_relations in a secure environment
+function process_relations(filename)
+	assert(typeof(filename) == "string", "please provide a sting argument as the filename")
+	-- Restrict the environment user-provided code runs in
+	local accessible_functions = {register_relations}
+	local get_relations = assert(loadfile(filename, "t", accessible_functions))
+	-- Set limitations on the sandboxed envinronment's execution
+	local steplimit = 1000
+	local count = 0
+	local memlimit = 1000 -- Memory limit in KB
+	local function hook()
+		if collectgarbage("count") > memlimit then error("script uses too much memory") end
+		count = count + 1
+		if count > steplimit then
+			error ("script uses too much CPU")
+		end
+	end
+
+	debug.sethook(hook, "c", 100)
+	get_relations()
+	debug.sethook()
 end
