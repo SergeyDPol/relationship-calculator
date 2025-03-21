@@ -195,9 +195,9 @@ function process_relations(filename)
 	local steplimit = 1000
 	local count = 0
 	local memlimit = 1000 -- Memory limit in KB
-	local function hook()
+	local function hook(event)
 		if collectgarbage("count") > memlimit then error("script uses too much memory") end
-		count = count + 1
+		if event == "count" then count = count + 1 end
 		if count > steplimit then
 			error ("script uses too much CPU")
 		end
