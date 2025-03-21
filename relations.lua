@@ -2,7 +2,7 @@
 function male_iterator_factory(self)
 	assert(type(self) == "table", "invalid input for iterator factory function")
 	assert(type(self.properties) == "table", "invalid input for iterator factory function")
-	assert(self.properties["gender"], "the table doesn't have the necessary field to filter on")
+	if self.properties["gender"] == nil then return function() return nil end end
 	local has_been_called = false
 	return function()
 		if has_been_called then return nil end
@@ -15,12 +15,12 @@ end
 function female_iterator_factory(self)
 	assert(type(self) == "table", "invalid input for iterator factory function")
 	assert(type(self.properties) == "table", "invalid input for iterator factory function")
-	assert(sef.properties["gender"], "the table doesn't have the necessary field to filter on")
+	if self.properties["gender"] == nil then return function() return nil end end
 	local has_been_called = false
 	return function()
 		if has_been_called then return nil end
 		has_been_called = true
-		if sef.properties["gender"] == "female" then return self
+		if self.properties["gender"] == "female" then return self
 		else return nil end
 	end
 end
@@ -28,41 +28,41 @@ end
 function spouse_iterator_factory(self)
 	assert(type(self) == "table", "invalid input for iterator factory function")
 	assert(type(self.properties) == "table", "invalid input for iterator factory function")
-	assert(sef.properties["spouse"], "the table doesn't have the necessary field to iterate on")
+	if self.properties["spouse"] == nil then return function() return nil end end
 	local has_been_called = false
 	return function()
 		if has_been_called then return nil end
 		has_been_called = true
-		return sef.properties["spouse"]
+		return self.properties["spouse"]
 	end
 end
 
 function child_iterator_factory(self)
 	assert(type(self) == "table", "invalid input for iterator factory function")
 	assert(type(self.properties) == "table", "invalid input for iterator factory function")
-	assert(sef.properties["child"], "the table doesn't have the necessary field to iterate on")
+	if self.properties["child"] == nil then return function() return nil end end
 	local i = 0
 	return function()
-		if i > #sef.properties["child"] then return nil end
+		if i > #self.properties["child"] then return nil end
 		i = i + 1
-		return sef.properties["child"][i]
+		return self.properties["child"][i]
 	end
 end
 
 function parent_iterator_factory(self)
 	assert(type(self) == "table", "invalid input for iterator factory function")
 	assert(type(self.properties) == "table", "invalid input for iterator factory function")
-	assert(sef.properties["parent"], "the table doesn't have the necessary field to iterate on")
+	if self.properties["parent"] == nil then return function() return nil end end
 	local i = 0
 	return function()
-		if i > #sef.properties["parent"] then return nil end
+		if i > #self.properties["parent"] then return nil end
 		i = i + 1
-		return sef.properties["parent"][i]
+		return self.properties["parent"][i]
 	end
 end
 
 -- A prototype for creating people
-local person = {
+person = {
 	male = male_iterator_factory,
 	female = female_iterator_factory,
 	spouse = spouse_iterator_factory,
@@ -88,21 +88,23 @@ local being_processed = {}
 function register_relations (relation_name, path)
 	-- Validate inputs
 	assert(type(relation_name) == "string", "trying to register a relation with an invalid name")
-	assert(type(path) == "table", "please provide a path to register relation" .. relation_name)
-	assert(person[relation_name] == nil, "attempt to redefine" .. relation_name)
-	-- Create a non-local variable for the closures
-	local func = nil
+	assert(type(path) == "table", "please provide a path to register relation " .. relation_name)
+	assert(person[relation_name] == nil, "attempt to redefine " .. relation_name)
+	-- Saves the factory for the current generator
+	local path_factory = nil
 
-	for _, relation in ipairs(path) do
+	for i, relation in ipairs(path) do
+		-- Create a non-local variable for closures
+		local closed_path_factory = path_factory
 		-- The first relation is just the iterator returned by the object itself
-		if func == nil then
-			func = function (self) return self[relation](self) end
+		if closed_path_factory == nil then
+			path_factory = function (self)  return self[relation](self) end
 			goto continue
 		end
 		-- The creation of an iterator factory for all other relations in the path
-		func = function(self)
+		path_factory = function(self)
 			-- A check for circular relation definition
-			if being_prosessed[relation] then error("detected circular relation definition for " .. relation) end
+			if being_processed[relation] then error("detected circular relation definition for " .. relation) end
 			being_processed[relation] = true
 
 			-- The iterator needs to keep track of the current element we're getting
@@ -118,12 +120,12 @@ function register_relations (relation_name, path)
 
 			-- Then we initialize the path iterator, which returns the next item in the
 			-- path we've constructed so far for the current element
-			local path_iterator = func(current)
+			local path_iterator = closed_path_factory(current)
 
 			-- We return an iterator that
 			return function()
 				-- Returns the next item in the path for the current element
-				tmp = chain_iterator()
+				tmp = path_iterator()
 				while tmp == nil do
 					-- If the whole path has been covered for the current element
 					-- we move on to the next element on the current level
@@ -131,8 +133,8 @@ function register_relations (relation_name, path)
 					-- If this was the last element on the current level then we've returned everything we could
 					if current == nil then return nil end
 					-- Otherwise, we traverse all the items produced by the path for the current element until a non-nil
-					path_iterator = func(current)
-					tmp = chain_iterator()
+					path_iterator = closed_path_factory(current)
+					tmp = path_iterator()
 				end
 				return tmp
 			end
@@ -142,9 +144,11 @@ function register_relations (relation_name, path)
 	end
 	-- Finally, we enclose the resulting finciton with a filter to remove self-relations
 	-- As always, we return an iterator factory
-	func = function (self)
+	do
+		local closed_path_factory = path_factory
+		path_factory = function (self)
 		-- We get the path iterator for the element we provide
-		local iterator = func(self)
+		local iterator = closed_path_factory(self)
 		-- We return an iterator that just returns the same elements the path iterator returns 
 		return function()
 			local tmp = nil
@@ -153,18 +157,20 @@ function register_relations (relation_name, path)
 			return tmp
 		end
 	end
+	
+	end
 	person[relation_name] = function(self)
 		if self.cache[relation_name] ~= nil then
 			local i = 0
 			return function() i = i + 1 return self.cache[relation][i] end
 		end
-		return func(self)
+		return path_factory(self)
 	end
 end
 
 -- This function returns the table with the relatives of type relation
 -- for person named person_name. Requires a filled-out table person_by_name
-function get_relation_for_person(person_name, relation)
+function get_relatives_for_person(person_name, relation)
 	local person = person_by_name[person_name]
 	assert(person, "person named " .. person_name .. " does not exist")
 	local result = person.properties[relation] or person.cache[relation]
