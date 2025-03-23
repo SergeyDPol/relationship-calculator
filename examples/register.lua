@@ -9,21 +9,24 @@ register_relations("husband", {"male", "spouse"});
 register_relations("wife", {"female", "spouse"});
 
 -- Братья и сестры
-register_relations("brother", {"male", "child", "parent"});
-register_relations("sister", {"female", "child", "parent"});
+register_relations("sibling", {"child", "parent"});
+register_relations("brother", {"male", "sibling"});
+register_relations("sister", {"female", "sibling"});
 
 -- Бабушки и дедушки
-register_relations("grandfather", {"male", "parent", "parent"});
-register_relations("grandmother", {"female", "parent", "parent"});
+register_relations("grandparent", {"parent", "parent"});
+register_relations("grandfather", {"male", "grandparent"});
+register_relations("grandmother", {"female", "grandparent"});
 
 -- Внуки и внучки
-register_relations("grandson", {"male", "child", "child"});
-register_relations("granddaughter", {"female", "child", "child"});
+register_relations("grandchild", {"child", "child"});
+register_relations("grandson", {"male", "grandchild"});
+register_relations("granddaughter", {"female", "grandchild"});
 
 -- Родственники через брак
-register_relations("father-in-law", {"male", "parent", "spouse"});
-register_relations("mother-in-law", {"female", "parent", "spouse"});
-register_relations("son-in-law", {"male", "spouse", "child"});
-register_relations("daughter-in-law", {"female", "spouse", "child"});
-register_relations("brother-in-law", {"male", "child", "parent", "spouse"});
-register_relations("sister-in-law", {"female", "child", "parent", "spouse"});
+register_relations("father-in-law", {"father", "spouse"});
+register_relations("mother-in-law", {"mother", "spouse"});
+register_relations("son-in-law", {"husband", "child"});
+register_relations("daughter-in-law", {"wife", "child"});
+register_relations("brother-in-law", {"brother", "spouse"});
+register_relations("sister-in-law", {"sister", "spouse"});
