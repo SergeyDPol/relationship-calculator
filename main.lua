@@ -42,8 +42,18 @@ else
                 parent_person.properties.child = {}
             end
 
+            if (parent_person.properties.spouse ~= nil and parent_person.properties.spouse.properties.child == nil) then
+                parent_person.properties.spouse.properties.child = {}
+            end
+
             child_person.properties.parent[#child_person.properties.parent + 1] = parent_person
             parent_person.properties.child[#parent_person.properties.child + 1] = child_person
+
+            -- Wife has the same child =)
+            if (parent_person.properties.spouse ~= nil) then
+                parent_person.properties.spouse.properties.child[#parent_person.properties.spouse.properties.child + 1] =
+                    child_person
+            end
         end
     end
     file:close()
