@@ -7,8 +7,11 @@ function male_iterator_factory(self)
 	return function()
 		if has_been_called then return nil end
 		has_been_called = true
-		if self.properties["gender"] == "male" then return self
-		else return nil end
+		if self.properties["gender"] == "male" then
+			return self
+		else
+			return nil
+		end
 	end
 end
 
@@ -20,8 +23,11 @@ function female_iterator_factory(self)
 	return function()
 		if has_been_called then return nil end
 		has_been_called = true
-		if self.properties["gender"] == "female" then return self
-		else return nil end
+		if self.properties["gender"] == "female" then
+			return self
+		else
+			return nil
+		end
 	end
 end
 
@@ -70,9 +76,10 @@ person = {
 	parent = parent_iterator_factory
 }
 
-local cache_mt = {__mode = "v"}
+local cache_mt = { __mode = "v" }
 function person:new(properties)
-	assert((type(properties) == "table") or (type(properties) == "nil"), "please provide a valid argument to create a person")
+	assert((type(properties) == "table") or (type(properties) == "nil"),
+		"please provide a valid argument to create a person")
 	local person = {}
 	person.properties = properties or {}
 	person.cache = {}
@@ -85,7 +92,7 @@ end
 -- A table to keep track of circular relation definitions
 local being_processed = {}
 
-function register_relations (relation_name, path)
+function register_relations(relation_name, path)
 	-- Validate inputs
 	assert(type(relation_name) == "string", "trying to register a relation with an invalid name")
 	assert(type(path) == "table", "please provide a path to register relation " .. relation_name)
@@ -98,7 +105,7 @@ function register_relations (relation_name, path)
 		local closed_path_factory = path_factory
 		-- The first relation is just the iterator returned by the object itself
 		if closed_path_factory == nil then
-			path_factory = function (self)  return self[relation](self) end
+			path_factory = function(self) return self[relation](self) end
 			goto continue
 		end
 		-- The creation of an iterator factory for all other relations in the path
@@ -138,34 +145,41 @@ function register_relations (relation_name, path)
 				end
 				return tmp
 			end
-			
 		end
-	::continue::
+		::continue::
 	end
 	-- Finally, we enclose the resulting finciton with a filter to remove self-relations
 	-- As always, we return an iterator factory
 	do
 		local closed_path_factory = path_factory
-		path_factory = function (self)
-		-- We get the path iterator for the element we provide
-		local iterator = closed_path_factory(self)
-		-- We return an iterator that just returns the same elements the path iterator returns 
-		return function()
-			local tmp = nil
-			-- Unless we return the element we generated the iterator for, in which case we skip it
-			repeat tmp = iterator() until tmp ~= self
-			return tmp
+		path_factory = function(self)
+			-- We get the path iterator for the element we provide
+			local iterator = closed_path_factory(self)
+			-- We return an iterator that just returns the same elements the path iterator returns
+			return function()
+				local tmp = nil
+				-- Unless we return the element we generated the iterator for, in which case we skip it
+				repeat tmp = iterator() until tmp ~= self
+				return tmp
+			end
 		end
-	end
-	
 	end
 	person[relation_name] = function(self)
 		if self.cache[relation_name] ~= nil then
 			local i = 0
-			return function() i = i + 1 return self.cache[relation][i] end
+			return function()
+				i = i + 1
+				return self.cache[relation][i]
+			end
 		end
 		return path_factory(self)
 	end
+end
+
+function remove_relation(relation_name)
+	assert(type(relation_name) == "string", "relation_name must be a string")
+	assert(person[relation_name] ~= nil, "relation_name " .. relation_name .. " does not exists")
+	person[relation_name] = nil
 end
 
 -- This function returns the table with the relatives of type relation
@@ -189,7 +203,7 @@ end
 function process_relations(filename)
 	assert(type(filename) == "string", "please provide a sting argument as the filename")
 	-- Restrict the environment user-provided code runs in
-	local accessible_functions = {register_relations}
+	local accessible_functions = { register_relations = register_relations }
 	local get_relations = assert(loadfile(filename, "t", accessible_functions))
 	-- Set limitations on the sandboxed envinronment's execution
 	local steplimit = 1000
@@ -199,7 +213,7 @@ function process_relations(filename)
 		if collectgarbage("count") > memlimit then error("script uses too much memory") end
 		count = count + 1
 		if count > steplimit then
-			error ("script uses too much CPU")
+			error("script uses too much CPU")
 		end
 	end
 
@@ -207,3 +221,9 @@ function process_relations(filename)
 	get_relations()
 	debug.sethook()
 end
+
+return {
+	get_relatives_for_person = get_relatives_for_person,
+	process_relations = process_relations,
+	person = person
+}
