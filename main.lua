@@ -61,6 +61,7 @@ for line in file:lines() do
 		end
 
 		if (parent_person.properties.spouse ~= nil and parent_person.properties.spouse.properties.child == nil) then
+			child_person.properties.parent[#child_person.properties.parent + 1] = parent_person.properties.spouse
 			parent_person.properties.spouse.properties.child = {}
 		end
 
