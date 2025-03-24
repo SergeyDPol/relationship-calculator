@@ -81,10 +81,16 @@ end
 -- call help first
 Actions["help"]()
 
-
 ---[=[
 while true do
-	
+	-- Control the garbage collection for cache invalidation
+	collectgarbage("stop")
+	memlimit = 250
+	local function hook()
+		if collectgarbage("count") > memlimit then collectgarbage() end
+	end
+	debug.sethook(hook, "", 100)
+
 	io.write("Команда (или 'exit' для выхода): ")
 	local input = io.read()
 
