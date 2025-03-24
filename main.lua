@@ -81,7 +81,6 @@ end
 -- call help first
 Actions["help"]()
 
----[=[
 while true do
 	-- Control the garbage collection for cache invalidation
 	collectgarbage("stop")
@@ -101,4 +100,3 @@ while true do
 	local output = Actions[cmd[1]]
 	if (output == nil) then print("unknown command: " .. input) else output(cmd) end
 end
---]=]

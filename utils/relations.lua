@@ -167,9 +167,11 @@ function register_relations(relation_name, path)
 	person[relation_name] = function(self)
 		if self.cache[relation_name] ~= nil then
 			local i = 0
+			-- Prevent cache from being garbage-collected while it's being iterated upon
+			local relatives = self.cache[relation_name]
 			return function()
 				i = i + 1
-				return self.cache[relation][i]
+				return self.cache[relation_name][i]
 			end
 		end
 		return path_factory(self)
