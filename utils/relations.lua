@@ -188,10 +188,16 @@ function get_relatives_for_person(person_name, relation)
 	local person = person_by_name[person_name]
 	assert(person, "person named " .. person_name .. " does not exist")
 	local result = person.properties[relation] or person.cache[relation]
-	if result ~= nil then return result end
+	if result ~= nil then
+		if result.name then
+			return {result}
+		else
+			return result
+		end
+	end
 	result = {}
 	local relative_iterator = person[relation]
-	assert(relative_iterator, "failed to find relation " .. relation)
+	if relative_iterator == nil then return nil end
 	for relative in relative_iterator(person) do
 		result[#result + 1] = relative
 	end
