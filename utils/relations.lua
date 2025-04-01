@@ -191,7 +191,7 @@ function get_relatives_for_person(person_name, relation)
 	assert(person, "person named " .. person_name .. " does not exist")
 	local result = person.properties[relation] or person.cache[relation]
 	if result ~= nil then
-		if result.properties.name then
+		if result.properties then
 			return {result}
 		else
 			return result
