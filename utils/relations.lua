@@ -230,6 +230,19 @@ function process_relations(filename)
 	debug.sethook()
 end
 
+function print_properties(person)
+	local properties = person.properties
+	print(properties.name, properties.gender)
+	print("Spouse: ", properties.spouse.properties.name)
+	print("Parents")
+	for _, v in pairs(properties.parent) do
+		print(v.properties.name, v.properties.gender)
+	end
+	print("Children")
+	for _, v in pairs(properties.child) do
+		print(v.properties.name, v.properties.gender)
+	end
+end
 return {
 	get_relatives_for_person = get_relatives_for_person,
 	process_relations = process_relations,
