@@ -30,3 +30,13 @@ register_relations("son-in-law", {"husband", "child"});
 register_relations("daughter-in-law", {"wife", "child"});
 register_relations("brother-in-law", {"brother", "spouse"});
 register_relations("sister-in-law", {"sister", "spouse"});
+
+-- Прародители
+local prefix = "great"
+local name = "grandparent"
+
+for i=1,10 do
+	local new_name = prefix .. name
+	register_relations(new_name, {"parent", name})
+	name = new_name
+end
