@@ -233,14 +233,18 @@ end
 function print_properties(person)
 	local properties = person.properties
 	print(properties.name, properties.gender)
-	print("Spouse: ", properties.spouse.properties.name)
-	print("Parents")
-	for _, v in pairs(properties.parent) do
-		print(v.properties.name, v.properties.gender)
+	if properties.spouse ~= nil then print("Spouse: ", properties.spouse.properties.name) end
+	if properties.parent ~= nil then
+		print("Parents")
+		for _, v in pairs(properties.parent) do
+			if v ~= nil then print(v.properties.name, v.properties.gender) end
+		end
 	end
-	print("Children")
-	for _, v in pairs(properties.child) do
-		print(v.properties.name, v.properties.gender)
+	if properties.child ~= nil then
+		print("Children")
+		for _, v in pairs(properties.child) do
+			if v ~= nil then print(v.properties.name, v.properties.gender) end
+		end
 	end
 end
 return {
