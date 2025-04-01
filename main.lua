@@ -27,6 +27,7 @@ for line in file:lines() do
 		local husband_person = person_by_name[husband]
 		local wife_person = person_by_name[wife]
 
+        -- TODO: Тут бага, чиним
 		local shared_children = nil
 		if husband_person.properties.child ~= nil then
 			shared_children = shared_children or {}

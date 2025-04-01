@@ -201,6 +201,7 @@ function get_relatives_for_person(person_name, relation)
 	for relative in relative_iterator(person) do
 		result[#result + 1] = relative
 	end
+	-- TODO: прокачать кэш
 	person.cache[relation] = result
 	return result
 end

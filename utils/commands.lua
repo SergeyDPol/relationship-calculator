@@ -18,6 +18,7 @@ Output: Митрофан
 ]])
 end
 
+-- TODO: get all. Нужен вывод всех связей. Проитерировать по всем спискам relations
 Actions = {
 	["get"] = function(cmd)
 		local success, result = pcall(get_relatives_for_person, cmd[2], cmd[3])
